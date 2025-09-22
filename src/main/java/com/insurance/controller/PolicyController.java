@@ -14,6 +14,8 @@ import com.insurance.dto.PolicyRequest;
 import com.insurance.dto.PolicyResponse;
 import com.insurance.service.PolicyServiceImpl;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/policies")
 public class PolicyController {
@@ -22,7 +24,7 @@ public class PolicyController {
 	private PolicyServiceImpl policyServiceImpl;
 	
 	@PostMapping("/save")
-	public ResponseEntity<PolicyResponse>   createPolicy(@RequestBody PolicyRequest policyRequest){
+	public ResponseEntity<PolicyResponse>   createPolicy(@Valid@RequestBody PolicyRequest policyRequest){
 		PolicyResponse response=policyServiceImpl.createPolicy(policyRequest);
 		return ResponseEntity.ok(response);
 		
@@ -42,7 +44,7 @@ public class PolicyController {
 	}
 	
 	@PutMapping("/Cancel/{id}")
-	public  ResponseEntity<PolicyResponse> cancelPolicy(@PathVariable("id") Long id){
+	public  ResponseEntity<PolicyResponse> cancelPolicy(@Valid@PathVariable("id") Long id){
 		PolicyResponse response=policyServiceImpl.cancelPolicy(id);
 		return ResponseEntity.ok(response);
 	

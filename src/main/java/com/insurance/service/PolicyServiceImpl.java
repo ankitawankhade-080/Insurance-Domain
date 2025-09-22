@@ -48,6 +48,10 @@ public class PolicyServiceImpl implements PolicyService {
 
 		policy.setCoverages(list);
 
+		if (request.getEndDate().isBefore(request.getStartDate())) {
+			throw new RuntimeException("End date must be after start date");
+		}
+
 		Policy savedPolicy = policyRepository.save(policy);
 		return mapToResponse(savedPolicy);
 	}
@@ -115,6 +119,10 @@ public class PolicyServiceImpl implements PolicyService {
 
 		Policy Policy = policyRepository.findById(policyId).orElseThrow(() -> new RuntimeException("Policy not found"));
 
+		if (request.getExtendsYear() <= 0) {
+			throw new RuntimeException("Extend Year must be atleast 1");
+		}
+		
 		if (request.getExtendsYear() != null) {
 			Policy.setEnd_Date(Policy.getEnd_Date().plusYears(request.getExtendsYear()));
 		}
@@ -122,6 +130,12 @@ public class PolicyServiceImpl implements PolicyService {
 		if (request.getPremiumAmount() != null) {
 			Policy.setPremium_Amout(request.getPremiumAmount());
 		}
+
+		if (Policy.getStatus().equals(PolicyStatus.CANCELLED)) {
+			throw new RuntimeException("Cancelled Policy Cannot Be Renewed");
+		}
+
+		
 
 		Policy updatedpolicy = policyRepository.save(Policy);
 
@@ -143,20 +157,26 @@ public class PolicyServiceImpl implements PolicyService {
 			coverageResponse.setCoverageType(c.getCoverage_type());
 			list1.add(coverageResponse);
 
-			policyResponse.setCoverages(list1);
 		}
+
+		policyResponse.setCoverages(list1);
 		return policyResponse;
 	}
 
 	@Override
 	public PolicyResponse cancelPolicy(Long policyId) {
-		
-		Policy Policy=policyRepository.findById(policyId).orElseThrow(() -> new RuntimeException("Policy not found"));
+
+		Policy Policy = policyRepository.findById(policyId).orElseThrow(() -> new RuntimeException("Policy not found"));
+		if (Policy.getStatus().equals(PolicyStatus.CANCELLED)) {
+			throw new RuntimeException("Policy is Alreadt Cancelled");
+		}
 		Policy.setStatus(PolicyStatus.CANCELLED);
 		Policy.setEnd_Date(LocalDate.now());
-		
+
+	
+
 		Policy cancelledPolicy = policyRepository.save(Policy);
-		
+
 		PolicyResponse policyResponse = new PolicyResponse();
 		policyResponse.setPolicyId(cancelledPolicy.getPolicy_Id());
 		policyResponse.setCustomerId(cancelledPolicy.getCustomer_id());
@@ -175,10 +195,10 @@ public class PolicyServiceImpl implements PolicyService {
 			coverageResponse.setCoverageType(c.getCoverage_type());
 			list1.add(coverageResponse);
 
-			policyResponse.setCoverages(list1);
 		}
+
+		policyResponse.setCoverages(list1);
 		return policyResponse;
-		
-		
+
 	}
 }

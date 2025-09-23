@@ -15,6 +15,9 @@ import com.insurance.dto.CoverageRequest;
 import com.insurance.dto.CoverageResponse;
 import com.insurance.dto.PolicyRequest;
 import com.insurance.dto.PolicyResponse;
+import com.insurance.exceptionhandler.DuplicatePolicyException;
+import com.insurance.exceptionhandler.InvalidPolicyRequestException;
+import com.insurance.exceptionhandler.PolicyNotFoundException;
 import com.insurance.repositories.PolicyRepository;
 
 @Service
@@ -49,7 +52,11 @@ public class PolicyServiceImpl implements PolicyService {
 		policy.setCoverages(list);
 
 		if (request.getEndDate().isBefore(request.getStartDate())) {
-			throw new RuntimeException("End date must be after start date");
+			throw new InvalidPolicyRequestException("End date must be after start date");
+		}
+		
+		if(policyRepository.existsByPolicyNumber(request.getPolicyNumber())) {
+			throw new DuplicatePolicyException("Policy Number is Already Exist");
 		}
 
 		Policy savedPolicy = policyRepository.save(policy);
@@ -85,7 +92,7 @@ public class PolicyServiceImpl implements PolicyService {
 	@Override
 	public PolicyResponse viewPolicy(Long policyId) {
 		Policy viewPolicy = policyRepository.findById(policyId)
-				.orElseThrow(() -> new RuntimeException("Policy not found"));
+				.orElseThrow(() -> new PolicyNotFoundException("Policy not found"));
 		;
 
 		PolicyResponse policyResponse = new PolicyResponse();
@@ -120,7 +127,7 @@ public class PolicyServiceImpl implements PolicyService {
 		Policy Policy = policyRepository.findById(policyId).orElseThrow(() -> new RuntimeException("Policy not found"));
 
 		if (request.getExtendsYear() <= 0) {
-			throw new RuntimeException("Extend Year must be atleast 1");
+			throw new InvalidPolicyRequestException("Extend Year must be atleast 1");
 		}
 		
 		if (request.getExtendsYear() != null) {
@@ -132,7 +139,7 @@ public class PolicyServiceImpl implements PolicyService {
 		}
 
 		if (Policy.getStatus().equals(PolicyStatus.CANCELLED)) {
-			throw new RuntimeException("Cancelled Policy Cannot Be Renewed");
+			throw new InvalidPolicyRequestException("Cancelled Policy Cannot Be Renewed");
 		}
 
 		
@@ -166,9 +173,9 @@ public class PolicyServiceImpl implements PolicyService {
 	@Override
 	public PolicyResponse cancelPolicy(Long policyId) {
 
-		Policy Policy = policyRepository.findById(policyId).orElseThrow(() -> new RuntimeException("Policy not found"));
+		Policy Policy = policyRepository.findById(policyId).orElseThrow(() -> new PolicyNotFoundException("Policy not found"));
 		if (Policy.getStatus().equals(PolicyStatus.CANCELLED)) {
-			throw new RuntimeException("Policy is Alreadt Cancelled");
+			throw new InvalidPolicyRequestException("Policy is Alreadt Cancelled");
 		}
 		Policy.setStatus(PolicyStatus.CANCELLED);
 		Policy.setEnd_Date(LocalDate.now());
